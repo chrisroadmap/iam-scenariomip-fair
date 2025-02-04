@@ -43,6 +43,7 @@ df_volcanic = pd.read_csv('../data/forcing/volcanic_erf_timebounds_2021phaseout.
 # define problem
 
 temp_out = np.ones((352, len(scenarios), 841)) * np.nan
+faer_out = np.ones((352, len(scenarios), 841)) * np.nan
 labels = []
 weights = np.ones(52)
 weights[0] = 0.5
@@ -78,6 +79,7 @@ for iscen, scenario in enumerate(tqdm(scenarios)):
     
     f.run(progress=False)
     temp_out[:, iscen, :] = f.temperature[:, 0, :, 0]# - np.average(f.temperature[100:152, 0, :, 0], weights=weights, axis=0)
+    faer_out[:, iscen, :] = f.forcing[:, 0, :, 54] + f.forcing[:, 0, :, 55]
     labels.append(scenario)
 
 # %%
@@ -87,6 +89,7 @@ os.makedirs('../output/results', exist_ok=True)
 ds = xr.Dataset(
     data_vars = dict(
         temperature_anomaly_rel_1750 = (['timebound', 'scenario', 'config'], temp_out),
+        aerosol_forcing = (['timebound', 'scenario', 'config'], faer_out),
     ),
     coords = dict(
         timebound = np.arange(1750, 2102),

@@ -24,24 +24,15 @@ import xarray as xr
 ds = xr.load_dataset('../output/results/scenariomip-cmip7.nc')
 
 # %%
-list(ds.scenario.to_numpy())
-
-# %%
 mod_scen = pd.DataFrame([(i.split('___')[0], i.split('___')[1]) for i in list(ds.scenario.to_numpy())], columns=['model', 'scenario'])
 
 # %%
 mod_scen['model'].unique()
 
 # %%
-sorted(mod_scen['scenario'].unique())
-
-# %%
 weights = np.ones(21)
 weights[0] = 0.5
 weights[-1] = 0.5
-
-# %%
-np.average(ds.temperature_anomaly_rel_1750.sel(timebound=np.arange(2002, 2023)).data, weights=weights, axis=0)
 
 # %%
 temperature_anomaly_rel_pd = 1.01 + ds.temperature_anomaly_rel_1750 - np.average(ds.temperature_anomaly_rel_1750.sel(timebound=np.arange(2002, 2023)).data, weights=weights, axis=0)#[None, ...]
@@ -162,14 +153,6 @@ pd.DataFrame(mod_scen['category'].value_counts().sort_index())
 mod_scen.to_csv('../output/results/categorization.csv')
 
 # %%
-mod_scen["model"]=="AIM 3.0"
-
-# %%
-array(['AIM 3.0', 'COFFEE 1.5', 'GCAM 7.1 scenarioMIP', 'IMAGE 3.4',
-       'MESSAGEix-GLOBIOM 2.1-M-R12', 'MESSAGEix-GLOBIOM-GAINS 2.1-M-R12',
-       'REMIND-MAgPIE 3.4-4.8', 'WITCH 6.0'], dtype=object)
-
-# %%
 fig, ax = pl.subplots(2,4, figsize=(18, 8))
 ax[0,0].plot(
     temperature_anomaly_rel_pd.timebound,
@@ -234,5 +217,121 @@ ax[1,3].plot(
 ax[1,3].set_xlim(2020, 2100)
 ax[1,3].set_ylim(0, 5)
 ax[1,3].set_title("WITCH 6.0")
+
+# %%
+fig, ax = pl.subplots(2,4, figsize=(18, 8))
+ax[0,0].plot(
+    ds.timebound,
+    (ds.aerosol_forcing[:, mod_scen["model"]=="AIM 3.0", :].median(dim='config'))
+);
+ax[0,0].set_xlim(2000, 2100)
+ax[0,0].set_ylim(-1.5, 0)
+ax[0,0].set_title("AIM 3.0")
+
+ax[0,1].plot(
+    ds.timebound,
+    (ds.aerosol_forcing[:, mod_scen["model"]=="COFFEE 1.5", :].median(dim='config'))
+);
+ax[0,1].set_xlim(2000, 2100)
+ax[0,1].set_ylim(-1.5, 0)
+ax[0,1].set_title("COFFEE 1.5")
+
+ax[0,2].plot(
+    ds.timebound,
+    (ds.aerosol_forcing[:, mod_scen["model"]=="GCAM 7.1 scenarioMIP", :].median(dim='config'))
+);
+ax[0,2].set_xlim(2000, 2100)
+ax[0,2].set_ylim(-1.5, 0)
+ax[0,2].set_title("GCAM 7.1 scenarioMIP")
+
+ax[0,3].plot(
+    ds.timebound,
+    (ds.aerosol_forcing[:, mod_scen["model"]=="IMAGE 3.4", :].median(dim='config'))
+);
+ax[0,3].set_xlim(2000, 2100)
+ax[0,3].set_ylim(-1.5, 0)
+ax[0,3].set_title("IMAGE 3.4")
+
+ax[1,0].plot(
+    ds.timebound,
+    (ds.aerosol_forcing[:, mod_scen["model"]=="MESSAGEix-GLOBIOM 2.1-M-R12", :].median(dim='config'))
+);
+ax[1,0].set_xlim(2000, 2100)
+ax[1,0].set_ylim(-1.5, 0)
+ax[1,0].set_title("MESSAGEix-GLOBIOM 2.1-M-R12")
+
+ax[1,1].plot(
+    ds.timebound,
+    (ds.aerosol_forcing[:, mod_scen["model"]=="MESSAGEix-GLOBIOM-GAINS 2.1-M-R12", :].median(dim='config'))
+);
+ax[1,1].set_xlim(2000, 2100)
+ax[1,1].set_ylim(-1.5, 0)
+ax[1,1].set_title("MESSAGEix-GLOBIOM-GAINS 2.1-M-R12")
+
+ax[1,2].plot(
+    ds.timebound,
+    (ds.aerosol_forcing[:, mod_scen["model"]=="REMIND-MAgPIE 3.4-4.8", :].median(dim='config'))
+);
+ax[1,2].set_xlim(2000, 2100)
+ax[1,2].set_ylim(-1.5, 0)
+ax[1,2].set_title("REMIND-MAgPIE 3.4-4.8")
+
+ax[1,3].plot(
+    ds.timebound,
+    (ds.aerosol_forcing[:, mod_scen["model"]=="WITCH 6.0", :].median(dim='config'))
+);
+ax[1,3].set_xlim(2000, 2100)
+ax[1,3].set_ylim(-1.5, 0)
+ax[1,3].set_title("WITCH 6.0")
+
+# %%
+mod_scen.model
+
+# %%
+mod_scen.scenario
+
+# %%
+aer_index = pd.MultiIndex.from_frame(
+    pd.concat(
+        (
+            mod_scen.model, 
+            mod_scen.scenario, 
+            pd.Series(['World']*90, name='region'),
+            pd.Series(['Effective Radiative Forcing|Aerosol|Median']*90, name='variable'),
+            pd.Series(['W/m2']*90, name='unit')
+        ), 
+        axis=1
+    )
+)
+
+# %%
+df_aer_out = pd.DataFrame(ds.aerosol_forcing.median(dim='config').data.T, columns=ds.timebound, index=aer_index)
+df_aer_out
+
+# %%
+df_aer_out.to_csv('../output/results/aerosol_forcing_median.csv')
+
+# %%
+temp_index = pd.MultiIndex.from_frame(
+    pd.concat(
+        (
+            mod_scen.model, 
+            mod_scen.scenario, 
+            pd.Series(['World']*90, name='region'),
+            pd.Series(['Temperature anomaly relative to 1850-1900|Median']*90, name='variable'),
+            pd.Series(['K']*90, name='unit')
+        ), 
+        axis=1
+    )
+)
+
+# %%
+df_temp_out = pd.DataFrame(temperature_anomaly_rel_pd.median(dim='config').data.T, columns=ds.timebound, index=temp_index)
+
+# %%
+df_temp_out
+
+# %%
+df_temp_out.to_csv('../output/results/temperature_median.csv')
 
 # %%
