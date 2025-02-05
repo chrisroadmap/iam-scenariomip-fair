@@ -1,4 +1,4 @@
-name: scenariomip-cmip7
+name: iam-scenariomip-fair
 channels:
   - conda-forge
 dependencies:
