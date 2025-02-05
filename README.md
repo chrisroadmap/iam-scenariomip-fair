@@ -1,4 +1,4 @@
-# scenariomip-cmip7
+# iam-scenariomip-fair
 Climate projections from IAM scenarios for CMIP7 using FAIR
 
 
